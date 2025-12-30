@@ -1,11 +1,11 @@
 """
 WhisperFlow Desktop - Transcription Service
-Service de transcription utilisant Faster-Whisper (CTranslate2)
+Transcription service using Faster-Whisper (CTranslate2)
 
-Faster-Whisper offre:
-- ~4x plus rapide que transformers
-- ~3x moins de mémoire RAM/VRAM
-- Même qualité de transcription
+Faster-Whisper provides:
+- ~4x faster than transformers
+- ~3x less RAM/VRAM usage
+- Same transcription quality
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from config import model_config, app_config
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# Import conditionnel de faster-whisper
+# Conditional faster-whisper import
 try:
     from faster_whisper import WhisperModel
     _HAS_FASTER_WHISPER = True
@@ -35,7 +35,7 @@ except ImportError:
     _HAS_FASTER_WHISPER = False
     WhisperModel = None
 
-# Import torch pour les infos GPU (optionnel)
+# Import torch for GPU info (optional)
 try:
     import torch
     _HAS_TORCH = True
@@ -45,16 +45,16 @@ except ImportError:
 
 @dataclass(slots=True, frozen=True)
 class TranscriptionResult:
-    """Résultat d'une transcription"""
+    """Transcription result"""
     text: str
-    language: str  # Langue utilisée ou détectée
-    duration: float  # Durée de l'audio
-    processing_time: float  # Temps de traitement
-    detected_language: str | None = None  # Langue détectée si auto
+    language: str  # Language used or detected
+    duration: float  # Audio duration
+    processing_time: float  # Processing time
+    detected_language: str | None = None  # Detected language if auto
     confidence: float | None = None
 
 
-# Patterns d'hallucination pré-compilés pour performance
+# Pre-compiled hallucination patterns for performance
 _HALLUCINATION_PATTERN = re.compile(
     r"(Merci d'avoir regardé|Sous-titres réalisés|Sous-titres par|"
     r"Merci à tous|À bientôt|Abonnez-vous|N'oubliez pas de|"
@@ -66,16 +66,16 @@ _WHITESPACE_PATTERN = re.compile(r'\s+')
 
 class TranscriptionService:
     """
-    Service de transcription Faster-Whisper optimisé GPU
+    GPU-optimized Faster-Whisper transcription service
     
     Features:
-    - Utilise CTranslate2 pour des performances optimales
-    - Support Float16/INT8 pour réduire la mémoire
-    - VAD intégré pour ignorer les silences
-    - Support multi-langue avec détection auto
+    - Uses CTranslate2 for optimal performance
+    - Float16/INT8 support to reduce memory
+    - Integrated VAD to ignore silence
+    - Multi-language support with auto-detection
     """
     
-    # Mapping des noms de modèles
+    # Model name mapping
     MODEL_MAPPING = {
         "openai/whisper-large-v3-turbo": "turbo",
         "openai/whisper-large-v3": "large-v3",
@@ -92,15 +92,15 @@ class TranscriptionService:
         device: str = model_config.DEVICE,
         compute_type: str = "float16"
     ):
-        # Convertit le model_id HuggingFace vers faster-whisper si nécessaire
+        # Convert HuggingFace model_id to faster-whisper if needed
         self.model_id = self.MODEL_MAPPING.get(model_id, model_id)
         self.device = device
         self.compute_type = compute_type
         
-        # Composants du modèle
+        # Model components
         self._model: WhisperModel | None = None
         
-        # État
+        # State
         self._is_loaded = False
         self._is_loading = False
         self._load_lock = threading.Lock()
@@ -108,29 +108,29 @@ class TranscriptionService:
         # Callbacks
         self._on_progress: Callable[[str, float], None] | None = None
         
-        # Statistiques
+        # Statistics
         self._total_transcriptions = 0
         self._total_audio_duration = 0.0
         self._total_processing_time = 0.0
     
     def set_progress_callback(self, callback: Callable[[str, float], None]) -> None:
-        """Définit le callback de progression (message, pourcentage)"""
+        """Sets progress callback (message, percentage)"""
         self._on_progress = callback
     
     def _report_progress(self, message: str, progress: float):
-        """Rapporte la progression"""
+        """Reports progress"""
         if self._on_progress:
             self._on_progress(message, progress)
     
     def load_model(self) -> bool:
         """
-        Charge le modèle Whisper avec Faster-Whisper.
+        Loads the Whisper model with Faster-Whisper.
         
-        Returns: True si chargé avec succès
+        Returns: True if loaded successfully
         """
         if not _HAS_FASTER_WHISPER:
-            print("❌ faster-whisper n'est pas installé!")
-            print("   Installez avec: pip install faster-whisper")
+            print("❌ faster-whisper is not installed!")
+            print("   Install with: pip install faster-whisper")
             return False
         
         with self._load_lock:
@@ -143,28 +143,28 @@ class TranscriptionService:
             self._is_loading = True
         
         try:
-            self._report_progress("Vérification GPU...", 0.1)
+            self._report_progress("Checking GPU...", 0.1)
             
-            # Vérifie CUDA si device=cuda
+            # Check CUDA if device=cuda
             if self.device == "cuda":
                 if _HAS_TORCH and not torch.cuda.is_available():
-                    print("⚠️ CUDA non disponible, utilisation du CPU")
+                    print("⚠️ CUDA not available, using CPU")
                     self.device = "cpu"
                     self.compute_type = "int8"
             
-            # Configure le cache local
+            # Configure local cache
             cache_dir = str(app_config.MODELS_DIR)
             os.environ["HF_HOME"] = cache_dir
-            print(f"📁 Cache modèles: {cache_dir}")
+            print(f"📁 Model cache: {cache_dir}")
             
-            # Libère la mémoire GPU existante
+            # Free existing GPU memory
             if _HAS_TORCH and torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            self._report_progress("Chargement du modèle Faster-Whisper...", 0.3)
-            print(f"📦 Chargement de '{self.model_id}' sur {self.device} ({self.compute_type})...")
+            self._report_progress("Loading Faster-Whisper model...", 0.3)
+            print(f"📦 Loading '{self.model_id}' on {self.device} ({self.compute_type})...")
             
-            # Charge le modèle avec Faster-Whisper
+            # Load model with Faster-Whisper
             self._model = WhisperModel(
                 self.model_id,
                 device=self.device,
@@ -172,23 +172,23 @@ class TranscriptionService:
                 download_root=cache_dir,
             )
             
-            self._report_progress("Prêt!", 1.0)
+            self._report_progress("Ready!", 1.0)
             
             with self._load_lock:
                 self._is_loaded = True
                 self._is_loading = False
             
-            # Affiche l'utilisation mémoire
+            # Display memory usage
             if _HAS_TORCH and torch.cuda.is_available():
                 memory_used = torch.cuda.memory_allocated() / 1024**3
-                print(f"✅ Modèle chargé! VRAM utilisée: {memory_used:.2f} GB")
+                print(f"✅ Model loaded! VRAM used: {memory_used:.2f} GB")
             else:
-                print("✅ Modèle chargé!")
+                print("✅ Model loaded!")
             
             return True
             
         except Exception as e:
-            print(f"❌ Erreur chargement modèle: {e}")
+            print(f"❌ Model loading error: {e}")
             import traceback
             traceback.print_exc()
             with self._load_lock:
@@ -196,7 +196,7 @@ class TranscriptionService:
             return False
     
     def unload_model(self):
-        """Décharge le modèle et libère la mémoire GPU"""
+        """Unloads model and frees GPU memory"""
         with self._load_lock:
             if not self._is_loaded:
                 return

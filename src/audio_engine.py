@@ -1,6 +1,6 @@
 """
 WhisperFlow Desktop - Audio Engine
-Moteur de capture audio à faible latence utilisant SoundDevice
+Low-latency audio capture engine using SoundDevice
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True, frozen=True)
 class AudioChunk:
-    """Représente un segment audio capturé"""
+    """Represents a captured audio segment"""
     data: NDArray[np.float32]
     timestamp: float
     sample_rate: int
@@ -32,13 +32,13 @@ class AudioChunk:
 
 class AudioEngine:
     """
-    Moteur de capture audio pour le Push-to-Talk
+    Audio capture engine for Push-to-Talk
     
     Features:
-    - Capture en temps réel à 16kHz (optimal pour Whisper)
-    - Buffer circulaire pour éviter les pertes
-    - Mode Push-to-Talk avec start/stop
-    - Normalisation automatique du signal
+    - Real-time capture at 16kHz (optimal for Whisper)
+    - Circular buffer to avoid data loss
+    - Push-to-Talk mode with start/stop
+    - Automatic signal normalization
     """
     
     def __init__(
@@ -53,26 +53,26 @@ class AudioEngine:
         self.blocksize = blocksize
         self.device = device
         
-        # État de l'enregistrement
+        # Recording state
         self._is_recording = False
         self._recording_lock = threading.Lock()
         
-        # Buffer pour les données audio
+        # Buffer for audio data
         self._audio_buffer: list[np.ndarray] = []
         self._buffer_lock = threading.Lock()
         
-        # Stream audio
+        # Audio stream
         self._stream: Optional[sd.InputStream] = None
         
         # Callbacks
         self._on_audio_level: Optional[Callable[[float], None]] = None
         
-        # Statistiques
+        # Statistics
         self._start_time: float = 0
         self._chunks_captured: int = 0
     
     def set_audio_level_callback(self, callback: Callable[[float], None]):
-        """Définit le callback pour les niveaux audio (VU-mètre)"""
+        """Sets the callback for audio levels (VU meter)"""
         self._on_audio_level = callback
     
     def _audio_callback(
@@ -83,13 +83,13 @@ class AudioEngine:
         status: sd.CallbackFlags
     ) -> None:
         """
-        Callback appelé par SoundDevice pour chaque bloc audio.
-        ATTENTION: Ce callback s'exécute dans un thread séparé!
+        Callback called by SoundDevice for each audio block.
+        WARNING: This callback runs in a separate thread!
         """
         if status:
             print(f"⚠️ Audio status: {status}")
         
-        # Vérification rapide sans lock si possible
+        # Quick check without lock if possible
         if not self._is_recording:
             return
         
@@ -97,34 +97,34 @@ class AudioEngine:
             if not self._is_recording:
                 return
         
-        # Copie les données (important car indata est un buffer réutilisé)
-        # Utilise ravel() si déjà contiguous, sinon flatten()
+        # Copy data (important because indata is a reused buffer)
+        # Use ravel() if already contiguous, otherwise flatten()
         audio_data: NDArray[np.float32] = indata.ravel().copy() if indata.flags['C_CONTIGUOUS'] else indata.flatten()
         
-        # Calcul du niveau audio (RMS) optimisé avec np.dot
+        # Optimized audio level calculation (RMS) with np.dot
         callback = self._on_audio_level
         if callback is not None:
             rms = np.sqrt(np.dot(audio_data, audio_data) / len(audio_data))
-            # Utilise np.clip et calcul log optimisé
+            # Use np.clip and optimized log calculation
             level_db = 20.0 * np.log10(max(rms, 1e-10))
             normalized_level = np.clip((level_db + 60.0) / 60.0, 0.0, 1.0)
             callback(float(normalized_level))
         
-        # Ajoute au buffer
+        # Add to buffer
         with self._buffer_lock:
             self._audio_buffer.append(audio_data)
             self._chunks_captured += 1
     
     def start_recording(self) -> bool:
         """
-        Démarre l'enregistrement audio
-        Returns: True si démarré avec succès
+        Starts audio recording
+        Returns: True if started successfully
         """
         with self._recording_lock:
             if self._is_recording:
                 return False
             
-            # Réinitialise le buffer
+            # Reset buffer
             with self._buffer_lock:
                 self._audio_buffer.clear()
                 self._chunks_captured = 0
@@ -132,7 +132,7 @@ class AudioEngine:
             self._start_time = time.time()
             
             try:
-                # Crée et démarre le stream
+                # Create and start stream
                 self._stream = sd.InputStream(
                     samplerate=self.sample_rate,
                     channels=self.channels,
@@ -146,13 +146,13 @@ class AudioEngine:
                 return True
                 
             except Exception as e:
-                print(f"❌ Erreur démarrage audio: {e}")
+                print(f"❌ Audio startup error: {e}")
                 return False
     
     def stop_recording(self) -> Optional[AudioChunk]:
         """
-        Arrête l'enregistrement et retourne les données capturées
-        Returns: AudioChunk contenant l'audio enregistré, ou None
+        Stops recording and returns captured data
+        Returns: AudioChunk containing recorded audio, or None
         """
         with self._recording_lock:
             if not self._is_recording:
@@ -160,22 +160,22 @@ class AudioEngine:
             
             self._is_recording = False
         
-        # Arrête le stream
+        # Stop stream
         if self._stream:
             self._stream.stop()
             self._stream.close()
             self._stream = None
         
-        # Récupère et concatène les données
+        # Retrieve and concatenate data
         with self._buffer_lock:
             if not self._audio_buffer:
                 return None
             
-            # Pré-calcul de la taille totale pour éviter réallocations
+            # Pre-calculate total size to avoid reallocations
             total_samples = sum(chunk.size for chunk in self._audio_buffer)
             audio_data = np.empty(total_samples, dtype=np.float32)
             
-            # Copie efficace dans le buffer pré-alloué
+            # Efficient copy into pre-allocated buffer
             offset = 0
             for chunk in self._audio_buffer:
                 audio_data[offset:offset + chunk.size] = chunk
@@ -183,7 +183,7 @@ class AudioEngine:
             
             self._audio_buffer.clear()
         
-        # Normalise l'audio (-1 à 1) - opération in-place
+        # Normalize audio (-1 to 1) - in-place operation
         max_val = np.abs(audio_data).max()
         if max_val > 0:
             audio_data *= (0.95 / max_val)
@@ -199,13 +199,13 @@ class AudioEngine:
     
     @property
     def is_recording(self) -> bool:
-        """Retourne True si l'enregistrement est en cours"""
+        """Returns True if recording is in progress"""
         with self._recording_lock:
             return self._is_recording
     
     @staticmethod
     def list_devices() -> list[dict]:
-        """Liste tous les périphériques audio disponibles"""
+        """Lists all available audio devices"""
         devices = sd.query_devices()
         input_devices = []
         
@@ -223,7 +223,7 @@ class AudioEngine:
     
     @staticmethod
     def get_default_device() -> dict:
-        """Retourne le périphérique d'entrée par défaut"""
+        """Returns the default input device"""
         device = sd.query_devices(kind='input')
         return {
             'name': device['name'],
@@ -234,8 +234,8 @@ class AudioEngine:
 
 class AudioLevelMonitor:
     """
-    Moniteur de niveau audio pour le feedback visuel
-    Fournit une valeur lissée du niveau audio
+    Audio level monitor for visual feedback
+    Provides a smoothed audio level value
     """
     
     def __init__(self, smoothing: float = 0.3):
@@ -246,15 +246,15 @@ class AudioLevelMonitor:
         self._lock = threading.Lock()
     
     def update(self, level: float):
-        """Met à jour le niveau avec lissage"""
+        """Updates level with smoothing"""
         with self._lock:
-            # Lissage exponentiel
+            # Exponential smoothing
             self._current_level = (
                 self.smoothing * level + 
                 (1 - self.smoothing) * self._current_level
             )
             
-            # Peak hold avec decay
+            # Peak hold with decay
             if level > self._peak_level:
                 self._peak_level = level
             else:
@@ -262,30 +262,30 @@ class AudioLevelMonitor:
     
     @property
     def level(self) -> float:
-        """Niveau actuel (0-1)"""
+        """Current level (0-1)"""
         with self._lock:
             return self._current_level
     
     @property
     def peak(self) -> float:
-        """Niveau peak (0-1)"""
+        """Peak level (0-1)"""
         with self._lock:
             return self._peak_level
 
 
-# Test standalone
+# Standalone test
 if __name__ == "__main__":
-    print("🎤 Test du moteur audio")
+    print("🎤 Audio engine test")
     print("-" * 40)
     
-    # Liste les périphériques
-    print("\n📋 Périphériques d'entrée disponibles:")
+    # List devices
+    print("\n📋 Available input devices:")
     for device in AudioEngine.list_devices():
         marker = "→ " if device['is_default'] else "  "
         print(f"{marker}[{device['id']}] {device['name']}")
     
-    # Test d'enregistrement
-    print("\n🔴 Enregistrement de 3 secondes...")
+    # Recording test
+    print("\n🔴 Recording 3 seconds...")
     
     engine = AudioEngine()
     monitor = AudioLevelMonitor()
@@ -297,16 +297,16 @@ if __name__ == "__main__":
     for i in range(30):
         time.sleep(0.1)
         bar = "█" * int(monitor.level * 20)
-        print(f"\r  Niveau: [{bar:<20}] {monitor.level:.2f}", end="")
+        print(f"\r  Level: [{bar:<20}] {monitor.level:.2f}", end="")
     
     print()
     
     chunk = engine.stop_recording()
     
     if chunk:
-        print(f"\n✅ Enregistrement terminé!")
-        print(f"   Durée: {chunk.duration:.2f}s")
+        print(f"\n✅ Recording completed!")
+        print(f"   Duration: {chunk.duration:.2f}s")
         print(f"   Samples: {len(chunk.data)}")
         print(f"   Sample Rate: {chunk.sample_rate} Hz")
     else:
-        print("\n❌ Aucune donnée capturée")
+        print("\n❌ No data captured")
