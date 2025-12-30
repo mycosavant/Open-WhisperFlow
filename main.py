@@ -2,25 +2,25 @@
 WhisperFlow Desktop
 ===================
 
-Application de transcription vocale temps réel en local.
-Utilise Whisper Large V3 Turbo optimisé pour GPU (RTX 4080).
+Real-time local voice transcription application.
+Uses Whisper Large V3 Turbo optimized for GPU (RTX 4080).
 
 Usage:
     python main.py
 
-Raccourcis:
-    F2      - Push-to-Talk (maintenir pour enregistrer)
-    F3      - Copier la transcription
-    ESC     - Quitter
+Shortcuts:
+    F2      - Push-to-Talk (hold to record)
+    F3      - Copy transcription
+    ESC     - Quit
 
-Auteur: WhisperFlow Team
-Licence: MIT
+Author: WhisperFlow Team
+License: MIT
 """
 
 import sys
 import os
 
-# Ajoute le répertoire courant au path
+# Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PyQt6.QtWidgets import QApplication
@@ -31,7 +31,7 @@ from config import app_config
 
 
 def check_requirements():
-    """Vérifie que toutes les dépendances sont installées"""
+    """Verify all dependencies are installed"""
     missing = []
     
     try:
@@ -42,8 +42,8 @@ def check_requirements():
     try:
         import torch
         if not torch.cuda.is_available():
-            print("⚠️  AVERTISSEMENT: CUDA n'est pas disponible!")
-            print("   La transcription sera très lente sans GPU.")
+            print("⚠️  WARNING: CUDA is not available!")
+            print("   Transcription will be very slow without GPU.")
             print()
     except ImportError:
         missing.append("torch")
@@ -69,79 +69,79 @@ def check_requirements():
         missing.append("pyperclip")
     
     if missing:
-        print("❌ Dépendances manquantes:")
+        print("❌ Missing dependencies:")
         for dep in missing:
             print(f"   - {dep}")
         print()
-        print("Installez-les avec:")
+        print("Install them with:")
         print("   pip install -r requirements.txt")
         print()
-        print("Pour PyTorch avec CUDA:")
+        print("For PyTorch with CUDA:")
         print("   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121")
         sys.exit(1)
 
 
 def main():
-    """Point d'entrée principal"""
+    """Main entry point"""
     
-    # Bannière
+    # Banner
     print()
     print("╔════════════════════════════════════════════════════════════╗")
     print("║                                                            ║")
     print("║   🎤 WhisperFlow Desktop                                   ║")
-    print("║   Transcription vocale temps réel en local                 ║")
+    print("║   Real-time local voice transcription                      ║")
     print("║                                                            ║")
     print("╚════════════════════════════════════════════════════════════╝")
     print()
     
-    # Vérifie les dépendances
+    # Check dependencies
     check_requirements()
     
-    # Configuration High DPI
+    # High DPI configuration
     if hasattr(Qt.ApplicationAttribute, 'AA_EnableHighDpiScaling'):
         QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
     if hasattr(Qt.ApplicationAttribute, 'AA_UseHighDpiPixmaps'):
         QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
     
-    # Crée l'application
+    # Create application
     app = QApplication(sys.argv)
     app.setApplicationName(app_config.APP_NAME)
     app.setApplicationVersion(app_config.APP_VERSION)
     
-    # Police par défaut
+    # Default font
     font = QFont("Segoe UI", 10)
     app.setFont(font)
     
-    # Affiche les infos GPU
+    # Display GPU info
     try:
         import torch
         if torch.cuda.is_available():
             gpu_name = torch.cuda.get_device_name(0)
             gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1024**3
-            print(f"🖥️  GPU détecté: {gpu_name} ({gpu_mem:.1f} GB)")
+            print(f"🖥️  GPU detected: {gpu_name} ({gpu_mem:.1f} GB)")
         else:
-            print("⚠️  Mode CPU (lent)")
+            print("⚠️  CPU mode (slow)")
     except ImportError:
-        print("⚠️  PyTorch non installé")
+        print("⚠️  PyTorch not installed")
     except Exception as e:
-        print(f"⚠️  Erreur détection GPU: {e}")
+        print(f"⚠️  GPU detection error: {e}")
     
     print()
-    print("📌 Raccourcis clavier:")
-    print("   F2  - Push-to-Talk (maintenir pour parler)")
-    print("   F3  - Copier la transcription")
-    print("   ESC - Quitter")
+    print("📌 Keyboard shortcuts:")
+    print("   F2  - Push-to-Talk (hold to speak)")
+    print("   F3  - Copy transcription")
+    print("   ESC - Quit")
     print()
-    print("🚀 Démarrage de l'application...")
+    print("🚀 Starting application...")
     print()
     
-    # Importe et crée la fenêtre principale
+    # Import and create main window
     from src.ui.main_window import MainWindow
     
     window = MainWindow()
     window.show()
     
-    # Boucle d'événements
+    # Event loop
     sys.exit(app.exec())
 
 
