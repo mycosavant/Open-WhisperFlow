@@ -221,49 +221,49 @@ class TranscriptionService:
         language: str | None = None
     ) -> TranscriptionResult | None:
         """
-        Transcrit un segment audio avec Faster-Whisper.
+        Transcribes an audio segment with Faster-Whisper.
         
         Args:
-            audio_data: Array numpy de l'audio (float32, -1 à 1)
-            sample_rate: Fréquence d'échantillonnage
-            language: Code langue (fr, en, etc.), "auto" pour détection, None utilise config
+            audio_data: Numpy array of audio (float32, -1 to 1)
+            sample_rate: Sampling rate
+            language: Language code (fr, en, etc.), "auto" for detection, None uses config
             
         Returns:
-            TranscriptionResult ou None en cas d'erreur
+            TranscriptionResult or None on error
         """
         if not self._is_loaded or self._model is None:
-            print("⚠️ Modèle non chargé!")
+            print("⚠️ Model not loaded!")
             return None
         
         start_time = time.time()
         audio_duration = len(audio_data) / sample_rate
         
-        # Détermine la langue à utiliser
+        # Determine language to use
         use_language = language if language is not None else model_config.LANGUAGE
         auto_detect = use_language == "auto" or use_language is None or use_language == ""
         
         try:
-            # Paramètres de transcription
+            # Transcription parameters
             transcribe_kwargs = {
                 "beam_size": 5,
                 "best_of": 1,
-                "vad_filter": True,  # Filtre les silences automatiquement
+                "vad_filter": True,  # Automatically filters silence
                 "vad_parameters": {
                     "threshold": 0.5,
                     "min_speech_duration_ms": 250,
                     "min_silence_duration_ms": 500,
                 },
-                "without_timestamps": True,  # Plus rapide sans timestamps
+                "without_timestamps": True,  # Faster without timestamps
             }
             
-            # Si pas auto-détection, spécifie la langue
+            # If not auto-detection, specify language
             if not auto_detect:
                 transcribe_kwargs["language"] = use_language
             
-            # Exécute la transcription
+            # Execute transcription
             segments, info = self._model.transcribe(audio_data, **transcribe_kwargs)
             
-            # Collecte tous les segments en une seule chaîne
+            # Collect all segments into a single string
             text_parts = []
             for segment in segments:
                 text_parts.append(segment.text.strip())
@@ -272,15 +272,15 @@ class TranscriptionService:
             
             processing_time = time.time() - start_time
             
-            # Met à jour les statistiques
+            # Update statistics
             self._total_transcriptions += 1
             self._total_audio_duration += audio_duration
             self._total_processing_time += processing_time
             
-            # Supprime les hallucinations courantes
+            # Remove common hallucinations
             text = self._clean_hallucinations(text)
             
-            # Détermine la langue détectée/utilisée
+            # Determine detected/used language
             detected_lang = info.language if auto_detect else None
             final_language = info.language if auto_detect else use_language
             confidence = info.language_probability if auto_detect else None
@@ -295,12 +295,12 @@ class TranscriptionService:
             )
             
         except Exception as e:
-            print(f"❌ Erreur transcription: {e}")
+            print(f"❌ Transcription error: {e}")
             import traceback
             traceback.print_exc()
             return None
         finally:
-            # Force garbage collection périodiquement
+            # Force garbage collection periodically
             if self._total_transcriptions % 10 == 0:
                 gc.collect()
                 if _HAS_TORCH and torch.cuda.is_available():
@@ -308,32 +308,32 @@ class TranscriptionService:
     
     def _clean_hallucinations(self, text: str) -> str:
         """
-        Supprime les hallucinations courantes de Whisper.
-        Utilise des regex pré-compilées pour performance.
+        Removes common Whisper hallucinations.
+        Uses pre-compiled regex for performance.
         """
-        # Supprime les hallucinations avec regex pré-compilée
+        # Remove hallucinations with pre-compiled regex
         text = _HALLUCINATION_PATTERN.sub('', text)
         
-        # Nettoie les espaces multiples avec regex pré-compilée
+        # Clean multiple spaces with pre-compiled regex
         text = _WHITESPACE_PATTERN.sub(' ', text)
         
         return text.strip()
     
     @property
     def is_loaded(self) -> bool:
-        """Retourne True si le modèle est chargé"""
+        """Returns True if model is loaded"""
         with self._load_lock:
             return self._is_loaded
     
     @property
     def is_loading(self) -> bool:
-        """Retourne True si le modèle est en cours de chargement"""
+        """Returns True if model is loading"""
         with self._load_lock:
             return self._is_loading
     
     @property
     def stats(self) -> dict:
-        """Retourne les statistiques de transcription"""
+        """Returns transcription statistics"""
         avg_rtf = 0  # Real-Time Factor
         if self._total_audio_duration > 0:
             avg_rtf = self._total_processing_time / self._total_audio_duration
@@ -342,12 +342,12 @@ class TranscriptionService:
             "total_transcriptions": self._total_transcriptions,
             "total_audio_duration": self._total_audio_duration,
             "total_processing_time": self._total_processing_time,
-            "average_rtf": avg_rtf,  # < 1 = plus rapide que temps réel
+            "average_rtf": avg_rtf,  # < 1 = faster than real-time
         }
     
     @staticmethod
     def get_gpu_info() -> dict:
-        """Retourne les informations sur le GPU"""
+        """Returns GPU information"""
         if not _HAS_TORCH or not torch.cuda.is_available():
             return {"available": False}
         
@@ -363,10 +363,10 @@ class TranscriptionService:
     @staticmethod
     def get_vram_usage() -> tuple[float, float, float]:
         """
-        Retourne l'utilisation VRAM actuelle.
+        Returns current VRAM usage.
         
         Returns:
-            Tuple (utilisée_gb, totale_gb, pourcentage)
+            Tuple (used_gb, total_gb, percentage)
         """
         if not _HAS_TORCH or not torch.cuda.is_available():
             return (0.0, 0.0, 0.0)
@@ -378,25 +378,25 @@ class TranscriptionService:
         return (allocated, total, percentage)
 
 
-# Test standalone
+# Standalone test
 if __name__ == "__main__":
-    print("🤖 Test du service de transcription (Faster-Whisper)")
+    print("🤖 Transcription service test (Faster-Whisper)")
     print("-" * 50)
     
     if not _HAS_FASTER_WHISPER:
-        print("❌ faster-whisper n'est pas installé!")
+        print("❌ faster-whisper is not installed!")
         print("   pip install faster-whisper")
         exit(1)
     
-    # Affiche les infos GPU
+    # Display GPU info
     gpu_info = TranscriptionService.get_gpu_info()
     if gpu_info["available"]:
         print(f"✅ GPU: {gpu_info['name']}")
-        print(f"   Mémoire totale: {gpu_info['total_memory_gb']:.1f} GB")
+        print(f"   Total memory: {gpu_info['total_memory_gb']:.1f} GB")
     else:
-        print("ℹ️ Pas de GPU, utilisation du CPU")
+        print("ℹ️ No GPU, using CPU")
     
-    # Crée le service
+    # Create service
     service = TranscriptionService()
     
     def on_progress(msg, progress):
@@ -405,32 +405,32 @@ if __name__ == "__main__":
     
     service.set_progress_callback(on_progress)
     
-    print("\n\n📦 Chargement du modèle...")
+    print("\n\n📦 Loading model...")
     if not service.load_model():
-        print("\n❌ Échec du chargement!")
+        print("\n❌ Loading failed!")
         exit(1)
     
     print("\n")
     
-    # Test avec un audio synthétique (silence)
-    print("🎤 Test transcription (silence de 1s)...")
+    # Test with synthetic audio (silence)
+    print("🎤 Transcription test (1s silence)...")
     test_audio = np.zeros(16000, dtype=np.float32)
     result = service.transcribe(test_audio)
     
     if result:
-        print(f"✅ Transcription réussie!")
-        print(f"   Texte: '{result.text}'")
-        print(f"   Langue: {result.language}")
-        print(f"   Temps: {result.processing_time:.2f}s")
+        print(f"✅ Transcription successful!")
+        print(f"   Text: '{result.text}'")
+        print(f"   Language: {result.language}")
+        print(f"   Time: {result.processing_time:.2f}s")
     
-    # Statistiques
-    print(f"\n📊 Après transcription:")
+    # Statistics
+    print(f"\n📊 After transcription:")
     gpu_info = TranscriptionService.get_gpu_info()
     if gpu_info["available"]:
-        print(f"   VRAM utilisée: {gpu_info['memory_allocated_gb']:.2f} GB")
+        print(f"   VRAM used: {gpu_info['memory_allocated_gb']:.2f} GB")
     
     stats = service.stats
-    print(f"   RTF moyen: {stats['average_rtf']:.3f}")
+    print(f"   Average RTF: {stats['average_rtf']:.3f}")
     
-    # Décharge
+    # Unload
     service.unload_model()
