@@ -1,12 +1,12 @@
 """
 WhisperFlow Desktop - Smart Formatter
-Formatage intelligent du texte transcrit via modèle IA léger
+Intelligent formatting of transcribed text via lightweight AI model
 
-Fonctionnalités:
-- Ponctuation automatique
-- Capitalisation des phrases
-- Correction grammaticale légère
-- Formatage des listes et nombres
+Features:
+- Automatic punctuation
+- Sentence capitalization
+- Light grammar correction
+- List and number formatting
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from typing import Callable, Optional
 sys.path.append('..')
 from config import app_config
 
-# Essaie d'importer le modèle de formatage
+# Try to import formatting model
 _HAS_TRANSFORMER = False
 try:
     import torch
@@ -32,16 +32,16 @@ except ImportError:
 
 
 class FormattingLevel(Enum):
-    """Niveaux de formatage"""
-    NONE = "none"           # Pas de formatage
-    BASIC = "basic"         # Capitalisation + ponctuation basique
-    SMART = "smart"         # IA légère pour ponctuation intelligente
-    FULL = "full"           # Correction grammaticale complète
+    """Formatting levels"""
+    NONE = "none"           # No formatting
+    BASIC = "basic"         # Capitalization + basic punctuation
+    SMART = "smart"         # Lightweight AI for smart punctuation
+    FULL = "full"           # Complete grammar correction
 
 
 @dataclass(slots=True)
 class FormattingResult:
-    """Résultat du formatage"""
+    """Formatting result"""
     original_text: str
     formatted_text: str
     corrections_made: int
@@ -50,14 +50,14 @@ class FormattingResult:
 
 class SmartFormatter:
     """
-    Service de formatage intelligent du texte.
+    Intelligent text formatting service.
     
-    Utilise un modèle IA léger pour:
-    - Ajouter la ponctuation manquante
-    - Corriger la capitalisation
-    - Améliorer la lisibilité
+    Uses a lightweight AI model to:
+    - Add missing punctuation
+    - Correct capitalization
+    - Improve readability
     
-    Fonctionne en mode dégradé (règles basiques) si le modèle n'est pas dispo.
+    Falls back to basic rules if model is unavailable.
     """
     
     # Modèle léger pour la ponctuation/capitalisation (~300MB)
