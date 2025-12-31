@@ -1,8 +1,8 @@
 # WhisperFlow Desktop
 
-🎤 **Application de transcription vocale temps réel en local**
+🎤 **Real-time local voice transcription application**
 
-Transformez votre voix en texte instantanément, en toute confidentialité, sans connexion cloud.
+Transform your voice to text instantly, privately, without cloud connection.
 
 ![WhisperFlow](https://img.shields.io/badge/WhisperFlow-v1.0.0-blue)
 ![Python](https://img.shields.io/badge/Python-3.10+-green)
@@ -11,115 +11,115 @@ Transformez votre voix en texte instantanément, en toute confidentialité, sans
 
 ---
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-- 🚀 **Ultra-rapide** - Transcription en temps réel grâce à l'accélération GPU
-- 🔒 **100% Local** - Aucune donnée ne quitte votre ordinateur
-- 🎯 **Précision** - Utilise Whisper Large V3 Turbo d'OpenAI
-- 🎹 **Push-to-Talk** - Appuyez sur F2, parlez, relâchez, c'est transcrit
-- 📋 **Copie facile** - Résultat copié en un clic ou avec F3
-- 🎨 **UI Moderne** - Interface flottante minimaliste style macOS
+- 🚀 **Ultra-fast** - Real-time transcription with GPU acceleration
+- 🔒 **100% Local** - No data leaves your computer
+- 🎯 **Accurate** - Uses OpenAI's Whisper Large V3 Turbo
+- 🎹 **Push-to-Talk** - Press F2, speak, release, it's transcribed
+- 📋 **Easy Copy** - Result copied with one click or F3
+- 🎨 **Modern UI** - Minimalist floating interface macOS style
 
 ---
 
-## 🖥️ Prérequis
+## 🖥️ Requirements
 
-| Composant | Minimum | Recommandé |
-|-----------|---------|------------|
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
 | **GPU** | NVIDIA GTX 1060 (6GB) | RTX 3080+ / RTX 4080 |
 | **VRAM** | 6 GB | 12+ GB |
 | **RAM** | 8 GB | 16+ GB |
 | **OS** | Windows 10 | Windows 11 |
 | **Python** | 3.10 | 3.11 |
 
-### Logiciels requis
+### Required Software
 
-1. **Python 3.10+** - [Télécharger](https://python.org)
-2. **Drivers NVIDIA récents** - [Télécharger](https://nvidia.com/drivers)
-3. **FFmpeg** (optionnel) - [Télécharger](https://ffmpeg.org)
+1. **Python 3.10+** - [Download](https://python.org)
+2. **Recent NVIDIA Drivers** - [Download](https://nvidia.com/drivers)
+3. **FFmpeg** (optional) - [Download](https://ffmpeg.org)
 
 ---
 
 ## 🚀 Installation
 
-### Installation automatique (recommandée)
+### Automatic Installation (recommended)
 
 ```bash
-# 1. Clonez ou téléchargez le projet
+# 1. Clone or download the project
 cd WhisperFlow
 
-# 2. Lancez l'installation
+# 2. Run the installation
 setup.bat
 ```
 
-Le script `setup.bat` va automatiquement :
-- Créer un environnement virtuel Python
-- Installer PyTorch avec support CUDA 12.1
-- Installer toutes les dépendances
-- Tester la configuration GPU
-- Lancer l'application
+The `setup.bat` script will automatically:
+- Create a Python virtual environment
+- Install PyTorch with CUDA 12.1 support
+- Install all dependencies
+- Test GPU configuration
+- Launch the application
 
-### Installation manuelle
+### Manual Installation
 
 ```bash
-# 1. Créer l'environnement virtuel
+# 1. Create virtual environment
 python -m venv .venv
 .venv\Scripts\activate
 
-# 2. Installer PyTorch avec CUDA
+# 2. Install PyTorch with CUDA
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
-# 3. Installer les dépendances
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Tester le GPU
+# 4. Test GPU
 python test_gpu.py
 
-# 5. Lancer l'application
+# 5. Launch application
 python main.py
 ```
 
 ---
 
-## 🎮 Utilisation
+## 🎮 Usage
 
-### Raccourcis clavier
+### Keyboard Shortcuts
 
-| Touche | Action |
-|--------|--------|
-| **F2** | Push-to-Talk (maintenir pour parler) |
-| **F3** | Copier la transcription |
-| **ESC** | Quitter l'application |
+| Key | Action |
+|-----|--------|
+| **F2** | Push-to-Talk (hold to speak) |
+| **F3** | Copy transcription |
+| **ESC** | Quit application |
 
-### Workflow typique
+### Typical Workflow
 
-1. **Lancez** l'application avec `run.bat`
-2. **Attendez** le chargement du modèle (~30s au premier lancement)
-3. **Maintenez F2** et parlez dans votre micro
-4. **Relâchez F2** - la transcription apparaît instantanément
-5. **Appuyez F3** pour copier ou cliquez sur "Copier"
+1. **Launch** the application with `run.bat`
+2. **Wait** for model loading (~30s on first launch)
+3. **Hold F2** and speak into your microphone
+4. **Release F2** - transcription appears instantly
+5. **Press F3** to copy or click "Copy"
 
 ---
 
 ## ⚙️ Configuration
 
-Modifiez `config.py` pour personnaliser :
+Modify `config.py` to customize:
 
 ```python
-# Langue de transcription
+# Transcription language
 LANGUAGE = "fr"  # fr, en, es, de, etc.
 
-# Touche Push-to-Talk
+# Push-to-Talk key
 PUSH_TO_TALK_KEY = "f2"
 
-# Modèle Whisper
+# Whisper model
 MODEL_ID = "openai/whisper-large-v3-turbo"
 ```
 
-### Modèles disponibles
+### Available Models
 
-| Modèle | VRAM | Précision | Vitesse |
-|--------|------|-----------|---------|
+| Model | VRAM | Accuracy | Speed |
+|-------|------|----------|-------|
 | `whisper-tiny` | ~1 GB | ⭐⭐ | ⭐⭐⭐⭐⭐ |
 | `whisper-base` | ~1 GB | ⭐⭐⭐ | ⭐⭐⭐⭐ |
 | `whisper-small` | ~2 GB | ⭐⭐⭐⭐ | ⭐⭐⭐ |
@@ -133,103 +133,103 @@ MODEL_ID = "openai/whisper-large-v3-turbo"
 
 ```
 WhisperFlow/
-├── main.py                 # Point d'entrée
-├── config.py               # Configuration centralisée
-├── requirements.txt        # Dépendances Python
-├── setup.bat               # Script d'installation
-├── run.bat                 # Lanceur rapide
-├── test_gpu.py             # Diagnostic GPU
-├── LICENSE                 # Licence MIT
+├── main.py                 # Entry point
+├── config.py               # Centralized configuration
+├── requirements.txt        # Python dependencies
+├── setup.bat               # Installation script
+├── run.bat                 # Quick launcher
+├── test_gpu.py             # GPU diagnostics
+├── LICENSE                 # MIT License
 └── src/
-    ├── audio_engine.py           # Capture audio (SoundDevice)
-    ├── transcription_service.py  # Moteur IA (Faster-Whisper)
-    ├── smart_formatter.py        # Formatage intelligent du texte
+    ├── audio_engine.py           # Audio capture (SoundDevice)
+    ├── transcription_service.py  # AI engine (Faster-Whisper)
+    ├── smart_formatter.py        # Smart text formatting
     ├── ui/
-    │   ├── main_window.py        # Fenêtre PyQt6
-    │   ├── key_capture_dialog.py # Configuration des raccourcis
-    │   ├── styles.py             # Styles CSS
-    │   └── workers.py            # Threading QThread
+    │   ├── main_window.py        # PyQt6 window
+    │   ├── key_capture_dialog.py # Shortcut configuration
+    │   ├── styles.py             # CSS styles
+    │   └── workers.py            # QThread threading
     └── utils/
-        ├── clipboard.py          # Presse-papier & frappe auto
-        ├── history.py            # Historique des transcriptions
-        ├── hotkey_listener.py    # Raccourcis globaux
-        └── settings.py           # Persistance des paramètres
+        ├── clipboard.py          # Clipboard & auto-type
+        ├── history.py            # Transcription history
+        ├── hotkey_listener.py    # Global shortcuts
+        └── settings.py           # Settings persistence
 ```
 
 ---
 
-## 🐛 Dépannage
+## 🐛 Troubleshooting
 
-### "CUDA n'est pas disponible"
+### "CUDA is not available"
 
-1. Vérifiez que vous avez une carte NVIDIA
-2. Mettez à jour vos drivers : [nvidia.com/drivers](https://nvidia.com/drivers)
-3. Réinstallez PyTorch : `pip install torch --index-url https://download.pytorch.org/whl/cu121`
+1. Verify you have an NVIDIA card
+2. Update your drivers: [nvidia.com/drivers](https://nvidia.com/drivers)
+3. Reinstall PyTorch: `pip install torch --index-url https://download.pytorch.org/whl/cu121`
 
-### "Out of Memory" (VRAM insuffisante)
+### "Out of Memory" (insufficient VRAM)
 
-1. Fermez les autres applications utilisant le GPU
-2. Utilisez un modèle plus petit dans `config.py` :
+1. Close other applications using the GPU
+2. Use a smaller model in `config.py`:
    ```python
    MODEL_ID = "openai/whisper-small"
    ```
 
-### Le micro ne fonctionne pas
+### Microphone not working
 
-1. Vérifiez que le micro est autorisé dans Windows
-2. Testez avec `python -c "import sounddevice; print(sounddevice.query_devices())"`
-3. Sélectionnez manuellement le périphérique dans `config.py`
+1. Verify the microphone is allowed in Windows
+2. Test with `python -c "import sounddevice; print(sounddevice.query_devices())"`
+3. Manually select the device in `config.py`
 
-### L'application ne démarre pas
+### Application won't start
 
-1. Lancez `python test_gpu.py` pour diagnostiquer
-2. Vérifiez les logs dans le terminal
-3. Réinstallez avec `setup.bat`
+1. Run `python test_gpu.py` to diagnose
+2. Check logs in the terminal
+3. Reinstall with `setup.bat`
 
 ---
 
-## 📊 Performances
+## 📊 Performance
 
-Testé sur RTX 4080 (16 GB VRAM) :
+Tested on RTX 4080 (16 GB VRAM):
 
-| Durée audio | Temps transcription | RTF* |
-|-------------|---------------------|------|
-| 5 secondes | ~0.5s | 0.1x |
-| 30 secondes | ~2s | 0.07x |
+| Audio duration | Transcription time | RTF* |
+|----------------|-------------------|------|
+| 5 seconds | ~0.5s | 0.1x |
+| 30 seconds | ~2s | 0.07x |
 | 1 minute | ~3s | 0.05x |
 
-*RTF (Real-Time Factor) : < 1 = plus rapide que temps réel
+*RTF (Real-Time Factor): < 1 = faster than real-time
 
 ---
 
-## 🤝 Contribution
+## 🤝 Contributing
 
-Les contributions sont les bienvenues ! N'hésitez pas à :
-- 🐛 Signaler des bugs
-- 💡 Proposer des fonctionnalités
-- 🔧 Soumettre des pull requests
-
----
-
-## 📄 Licence
-
-MIT License - Libre d'utilisation personnelle et commerciale.
+Contributions are welcome! Feel free to:
+- 🐛 Report bugs
+- 💡 Propose features
+- 🔧 Submit pull requests
 
 ---
 
-## 🙏 Crédits
+## 📄 License
 
-- [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper) - Moteur de transcription optimisé
-- [OpenAI Whisper](https://github.com/openai/whisper) - Modèle de transcription
-- [Hugging Face Transformers](https://huggingface.co/transformers) - Pipeline ML
-- [PyQt6](https://riverbankcomputing.com/software/pyqt) - Interface graphique
-- [pynput](https://github.com/moses-palmer/pynput) - Raccourcis clavier
-- [SoundDevice](https://python-sounddevice.readthedocs.io) - Capture audio
+MIT License - Free for personal and commercial use.
+
+---
+
+## 🙏 Credits
+
+- [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper) - Optimized transcription engine
+- [OpenAI Whisper](https://github.com/openai/whisper) - Transcription model
+- [Hugging Face Transformers](https://huggingface.co/transformers) - ML pipeline
+- [PyQt6](https://riverbankcomputing.com/software/pyqt) - GUI framework
+- [pynput](https://github.com/moses-palmer/pynput) - Keyboard shortcuts
+- [SoundDevice](https://python-sounddevice.readthedocs.io) - Audio capture
 
 ---
 
 <div align="center">
 
-**WhisperFlow Desktop** - Fait avec ❤️ pour la productivité
+**WhisperFlow Desktop** - Made with ❤️ for productivity
 
 </div>

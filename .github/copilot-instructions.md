@@ -1,57 +1,57 @@
-# WhisperFlow - Instructions pour agents IA
+# WhisperFlow - AI Agent Instructions
 
 ## Architecture
 
-Application PyQt6 de transcription vocale locale utilisant Whisper Large V3 Turbo. Architecture en 4 couches :
+PyQt6 local voice transcription application using Whisper Large V3 Turbo. 4-layer architecture:
 
 ```
-main.py                    → Point d'entrée, vérification des dépendances
-config.py                  → Configuration centralisée (dataclasses)
+main.py                    → Entry point, dependency verification
+config.py                  → Centralized configuration (dataclasses)
 src/
-  audio_engine.py          → Capture audio (SoundDevice, 16kHz mono)
-  transcription_service.py → Pipeline Whisper (transformers, GPU/CUDA)
+  audio_engine.py          → Audio capture (SoundDevice, 16kHz mono)
+  transcription_service.py → Whisper pipeline (transformers, GPU/CUDA)
   ui/
-    main_window.py         → Fenêtre principale PyQt6 (sans bordure, draggable)
-    workers.py             → QThread workers pour tâches async
-    styles.py              → Thème sombre (QSS)
+    main_window.py         → Main PyQt6 window (frameless, draggable)
+    workers.py             → QThread workers for async tasks
+    styles.py              → Dark theme (QSS)
   utils/
-    hotkey_listener.py     → Raccourcis globaux (pynput)
-    settings.py            → Persistance JSON des préférences
-    clipboard.py           → Copie/frappe automatique du texte
+    hotkey_listener.py     → Global shortcuts (pynput)
+    settings.py            → JSON settings persistence
+    clipboard.py           → Copy/auto-type text
 ```
 
-## Flux de données
+## Data Flow
 
-1. **Push-to-Talk (F2)** → `GlobalHotkeyListener` déclenche `AudioRecorderWorker`
-2. **AudioEngine** capture en buffer numpy (16kHz float32)
-3. **TranscriptionWorker** envoie au `TranscriptionService` (GPU)
-4. Résultat → copie clipboard ou frappe directe via `type_text()`
+1. **Push-to-Talk (F2)** → `GlobalHotkeyListener` triggers `AudioRecorderWorker`
+2. **AudioEngine** captures into numpy buffer (16kHz float32)
+3. **TranscriptionWorker** sends to `TranscriptionService` (GPU)
+4. Result → clipboard copy or direct typing via `type_text()`
 
-## Conventions du projet
+## Project Conventions
 
 ### Configuration
 
-- **Toujours utiliser les dataclasses de** [config.py](../config.py) : `app_config`, `audio_config`, `model_config`, `hotkey_config`, `ui_config`
-- Ne pas hardcoder de valeurs de configuration dans les modules
+- **Always use dataclasses from** [config.py](../config.py): `app_config`, `audio_config`, `model_config`, `hotkey_config`, `ui_config`
+- Don't hardcode configuration values in modules
 
-### Threading PyQt6
+### PyQt6 Threading
 
-- Utiliser `QThread` avec signaux/slots pour les tâches longues (voir [workers.py](../src/ui/workers.py))
-- Pattern : Worker avec `QMutex`/`QWaitCondition` pour la communication
-- Les callbacks audio (`_audio_callback`) s'exécutent dans un thread séparé - toujours copier les données
+- Use `QThread` with signals/slots for long tasks (see [workers.py](../src/ui/workers.py))
+- Pattern: Worker with `QMutex`/`QWaitCondition` for communication
+- Audio callbacks (`_audio_callback`) run in a separate thread - always copy data
 
-### État de l'application
+### Application State
 
-Utiliser l'enum `AppState` dans [main_window.py](../src/ui/main_window.py) :
+Use the `AppState` enum in [main_window.py](../src/ui/main_window.py):
 
-- `LOADING` → chargement modèle (~30s)
-- `READY` → prêt à enregistrer
-- `RECORDING` → capture en cours
-- `PROCESSING` → transcription GPU
+- `LOADING` → model loading (~30s)
+- `READY` → ready to record
+- `RECORDING` → capture in progress
+- `PROCESSING` → GPU transcription
 
-### Imports locaux
+### Local Imports
 
-Les modules utilisent `sys.path.append('..')` pour les imports relatifs. Exemple :
+Modules use `sys.path.append('..')` for relative imports. Example:
 
 ```python
 import sys
@@ -59,36 +59,36 @@ sys.path.append('..')
 from config import audio_config
 ```
 
-## Commandes de développement
+## Development Commands
 
 ```bash
 # Installation (Windows)
-setup.bat                  # Crée venv + installe PyTorch CUDA + dépendances
+setup.bat                  # Creates venv + installs PyTorch CUDA + dependencies
 
-# Lancement
-python main.py             # ou run.bat / WhisperFlow.bat
+# Launch
+python main.py             # or run.bat / WhisperFlow.bat
 
-# Test GPU
-python test_gpu.py         # Vérifie CUDA et la mémoire disponible
+# GPU test
+python test_gpu.py         # Checks CUDA and available memory
 ```
 
-## Dépendances critiques
+## Critical Dependencies
 
-- **PyTorch CUDA** : installé séparément via `--index-url https://download.pytorch.org/whl/cu121`
-- **transformers** : pipeline `automatic-speech-recognition` avec `AutoModelForSpeechSeq2Seq`
-- **sounddevice** : stream audio avec callbacks
-- **pynput** : capture globale des touches (fonctionne hors focus)
+- **PyTorch CUDA**: installed separately via `--index-url https://download.pytorch.org/whl/cu121`
+- **transformers**: `automatic-speech-recognition` pipeline with `AutoModelForSpeechSeq2Seq`
+- **sounddevice**: audio stream with callbacks
+- **pynput**: global key capture (works out of focus)
 
-## Points d'attention
+## Important Points
 
-1. **Mémoire GPU** : Le modèle utilise ~5-6 GB VRAM. Utiliser `torch.cuda.empty_cache()` si besoin
-2. **Audio 16kHz** : Whisper attend du 16kHz mono - la conversion est automatique dans `AudioEngine`
-3. **Fenêtre sans bordure** : Le drag est géré manuellement dans `TitleBar` via `mousePressEvent`/`mouseMoveEvent`
-4. **Flash Attention** : Optionnel, fallback sur SDPA si non installé
+1. **GPU Memory**: Model uses ~5-6 GB VRAM. Use `torch.cuda.empty_cache()` if needed
+2. **16kHz Audio**: Whisper expects 16kHz mono - conversion is automatic in `AudioEngine`
+3. **Frameless Window**: Drag is handled manually in `TitleBar` via `mousePressEvent`/`mouseMoveEvent`
+4. **Flash Attention**: Optional, fallback on SDPA if not installed
 
-## Structure des paramètres utilisateur
+## User Settings Structure
 
-Fichier `user_settings.json` à la racine, géré par `SettingsManager` :
+`user_settings.json` file at root, managed by `SettingsManager`:
 
 ```json
 {
